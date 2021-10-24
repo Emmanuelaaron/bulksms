@@ -1,92 +1,59 @@
-""" This is the Users' models file."""
-import datetime
-# from ..utility.validation import Valid
+from flask import current_app
+from flask_bcrypt import Bcrypt
+from flask_jwt_extended import create_access_token
+from datetime import timedelta
 
-class User:
-    """ Class for comprehensive Users.
-    """
+from app import db
 
-    def __init__(self, is_admin, user_id, first_name, last_name, other_name, phone_number, email, user_name, password, registered):
-        """ Using composition, integrate base class, credential and
-            other remaining attributes to make a complete User Class.
-        """
-        self.first_name = first_name
-        self.last_name = last_name
-        self.other_name = other_name
+from helpers.toDict import ToDict
+
+class User(db.Model, ToDict):
+    """ user table definition """
+
+    _tablename_ = "users"
+
+    # fields of the user table
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(256), nullable=False, default="")
+    username = db.Column(db.String(256), nullable=False, default="")
+    password = db.Column(db.String(256), nullable=False, default="")
+    phone_number = db.Column(db.String(256), unique=True, nullable=False, default="")
+    date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    def __init__(self, phone_number, name, password):
+        """ initialize with email, username and password """
         self.phone_number = phone_number
-        self.is_admin = is_admin
-        self.user_id = user_id
-        self.user_name = user_name
-        self.password = password
-        self.registered = str(datetime.datetime.now())
+        self.name = name
+        self.username = name
+        self.password = Bcrypt().generate_password_hash(password).decode()
+        
 
-    def to_dict(self):
-        """ Method to change the user class to a JSON object for retrieval.
+    def password_is_valid(self, password):
+        """ checks the password against it's hash to validate the user's password """
+        return Bcrypt().check_password_hash(self.password, password)
+
+    def save(self):
         """
-        return {
-            "first_name": self.base.first_name,
-            "last_name": self.base.last_name,
-            "other_name": self.base.other_name,
-            "phone_number": self.base.phone_number,
-            "email": self.credential.email,
-            "user_name": self.credential.user_name,
-            "password": self.credential.password,
-            "is_admin": self.is_admin,
-            "user_id": self.user_id,
-            "registered": self.registered
-        }
-
-
-class UserDB:
-    """ App users will be stored in this class.
-    """
-    valid = Valid()
-
-    def __init__(self):
-        """ app users will be held in a list called all_users.
+        save a user to the database
+        this includes creating a new user and editing one.
         """
-        self.all_users = []
+        db.session.add(self)
+        db.session.commit()
 
-    def create_user(self, user):
-        """ Method for adding a user.
-        """
-        return self.all_users.append(user)
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
 
-    def single_user(self, user_id):
-        """ Method to get an app user by ID.
-        """
-        for me_as_user in self.all_users:
-            if me_as_user.user_id == user_id:
-                return me_as_user
-        return None
+    def update(self):
+        db.session.commit()
+        
+    def generate_token(self, id):
+        """ generates the access token """
 
-    def checking_user(self, user_name, email):
-        """ Check whether username or email already exist in list.
-        """
-        temp = [
-            user for user in self.all_users if user.credential.user_name == user_name]
-        mail = [user for user in self.all_users if user.credential.email == email]
+        # set token expiry period
+        expiry = timedelta(days=10)
 
-        if len(temp) > 0:
-            return "User name is already taken."
-        elif len(mail) > 0:
-            return "Email already has an account."
-        else:
-            return None
+        return create_access_token(id, expires_delta=expiry)
 
-    def validate_login(self, user_name, password):
-        error = self.valid.validate_login(user_name, password)
-
-        if error:
-            return error
-
-        temp = [
-            user for user in self.all_users if user.credential.user_name == user_name]
-
-        if len(temp) != 1:
-            return "Username not found. Please sign up."
-
-        if temp[0].credential.password != password:
-            return "Wrong Password"
-
-        return None
+    def __repr__(self):
+        return "<User: {}>".format(self.email)
