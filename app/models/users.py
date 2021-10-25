@@ -56,4 +56,4 @@ class User(db.Model, ToDict):
         return create_access_token(id, expires_delta=expiry)
 
     def __repr__(self):
-        return "<User: {}>".format(self.email)
+        return "<User: {}>".format(self.phone_number)

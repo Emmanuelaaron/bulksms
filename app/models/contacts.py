@@ -1,11 +1,11 @@
 import jwt
 from datetime import datetime, timedelta
 from models.user import User
-from models.contacts_members import *
+# from models.contacts_members import *
 
 from app import db
 
-from helpers.toDict import ToDict
+# from helpers.toDict import ToDict
 
 class Contacts(db.Model, ToDict):
     """ Contacts table definition """
@@ -16,11 +16,15 @@ class Contacts(db.Model, ToDict):
     # fields of the Contacts table
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(256), nullable=False)
+    phone_number = db.Column(db.String(256), nullable=False)
+    constituency = db.olumn(db.String(256), nullable=False)
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
 
     def __init__(self, name):
         """ initialize with name, member and namespace """
         self.name = name
+        self.phone_number = phone_number
+        self.constituency = constituency
 
 
     def save(self):

@@ -1,7 +1,7 @@
 import jwt
 from datetime import datetime, timedelta
 from models.user import User
-from models.Forum_members import *
+# from models.Forum_members import *
 
 from app import db
 
